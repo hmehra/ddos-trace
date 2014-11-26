@@ -1,0 +1,158 @@
+README for DDoS Attack Traceback -
+
+TABLE OF CONTENTS
+    1. Directory Structure
+    2. Build Process
+    3. Run Sequence
+    4. Usage Format
+    5. Log Files
+
+
+1. DIRECTORY STRUCTURE
+==============================
+    |-- traffana.h
+    |-- router.h
+    |-- endhost.h
+    |-- common.h
+    |-- traffana.c
+    |-- router.c
+    |-- endhost.c
+    |-- Makefile
+
+
+2. BUILD PROCESS
+==============================
+Run the make command to create executables.
+
+ ############################################
+ #                                          #
+ #              PLEASE NOTE                 #
+ #                                          #
+ ############################################
+
+a) It is assumed that the router input file does not end with a new line
+   Sample Input (------------ indicates file start/end)
+
+   ------------
+   10.0.0.1
+   10.0.0.2
+   10.0.0.3
+   10.0.0.4
+   ------------
+
+
+b) During testing, VMs with multiple Ubuntu versions were provided.
+   Binaries compiled on Ubuntu on 10.04 will not work on Ubuntu 12.10
+   Please compile them separately if multiple releases are part of the
+   test bed. It is recommended that all VMs be running 12.04
+
+
+
+3. RUN SEQUENCE
+==============================
+Please use the following run sequence for the project to
+run correctly.
+a) Run traffana on victim node
+b) Run endhost on the same machine
+c) Run router on all the routers in the topology
+d) Orchestrate the attack
+
+
+
+4. USAGE FORMAT
+==============================
+The user must posses sudo rights to capture live packets. 
+The usage format for the executable is as follows -
+
+---------------------------
+TRAFFIC ANALYZER TOOL
+---------------------------
+
+ traffana [-r | -i] OPTIONS
+
+ -h, --help          Display this help and exit
+ -i, --interface     Interface name to capture from (root)
+ -r, --read          PCAP file to read packets from
+ -T, --time          Print packet/byte counts for specified time epoch
+ -v, --verbose       Enable verbose mode. Print packet/byte counts
+ -w, --write         Write the packet counts to a specified filename
+ -z, --track         Count number of flows based on the 2/5 tuple
+ -p, --pktthresh     Packet threshold to signal an attack
+ -b, --bytethresh    Byte threshold to signal an attack
+ -f, --flowthresh    Flow threshold to signal an attack
+ -s, --srcthresh     Source to destination threshold to signal an attack
+
+
+ -i|-r,-z are compulsory and require arguments.
+ -w flag asks for a file name. If not specified the program writes to stdout
+ -z only takes either 2 or 5 as the input argument. Else it reports an error.
+
+------------------
+ROUTER TOOL 
+------------------
+ router [OPTIONS]
+
+ -h, --help          Display this help and exit
+ -e, --epoch         Time epoch for logging
+ -p, --probability   Probablity to generate traceback message
+ -t, --tcp-port      TCP port to listen and receive control signals
+ -u, --udp-port      UDP port to send traceback messages
+ 
+All arguments are necessary to proceed except the -h option.
+
+------------------
+ENDHOST TOOL 
+------------------ 
+ endhost OPTIONS
+
+ -h, --help          Display this help and exit
+ -r, --filename      Router list file
+ -s, --stopthresh    Threshold to terminate path reconstruction
+ -t, --tcp-port      TCP port to send control signals
+ -u, --udp-port      UDP port to receive traceback messages
+
+All arguments are necessary to proceed except the -h option.
+
+  
+
+5. PROJECT DESCRIPTION
+==============================
+Traffana is a libpcap based traffic analyzer. It parses the incoming IPv4
+packets either read from a file or from a network interface. It keeps a count
+of the packets and the total connection flows in intervals of specified
+duration.The verbose mode differentiates TCP, UDP and ICMP packets as well as
+the TCP and UDP flows. Traffana can be used at a host to determine
+whether it is under a DDoS attack based on thresholds on number of packets,
+number of flows and number of sources trying to connect to the victim.
+Traffana creates an file called hostname.attackinfo to log all the attacks that
+take place.
+
+The endhost tool is responsible for the path construction from the attacker to 
+the victim. It signals the routers to start marking packets based on Savage's
+algorithm to send traceback messages. Once enough number of traceback messages
+are received, the path from victim to attacker is constructed.
+
+The router tool waits for a control signal from the victim to start sending
+traceback messages. These messages are sent using the marking probability to
+the victim for path construction.
+
+
+
+6. LOG FILES
+===============================
+Please refer to the following log files constructed for grading purposes -
+
+a) hostname.endhost.log
+Contains information about discovery of each router in the format
+
+currenttime startMarking routerIP msgstr 
+currenttime routerIP     distance 
+
+b) hostname.router.log
+Contains the information about the tracback packets and discovery in the format
+
+
+currenttime gotMarking     victimIP   msgstr 
+currenttime startedMarking msgstr 
+timeepoch   victimIP       numberofTracebackPackets 
+--------------------------------------------------------------------------------
